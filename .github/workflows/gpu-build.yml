@@ -1,0 +1,59 @@
+name: Build GPU runtimes
+on:
+  push:
+    branches: [main]
+    paths: ['native/gpu/**', 'tools/package_gpu.py', '.github/workflows/gpu-build.yml']
+  workflow_dispatch:
+jobs:
+  gpu:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {os: windows-2022, platform: windows-x64, backend: vulkan}
+          - {os: ubuntu-22.04, platform: linux-x64, backend: vulkan}
+          - {os: ubuntu-22.04-arm, platform: linux-arm64, backend: vulkan}
+          - {os: macos-15-intel, platform: macos-x64, backend: metal}
+          - {os: macos-latest, platform: macos-arm64, backend: metal}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: ggml-org/whisper.cpp
+          ref: d1be6fde11ac6e0407606b4e42fe72d34add8037
+          path: build/whisper-source
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - name: Linux Vulkan tools
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y libvulkan-dev glslc
+      - name: Windows Vulkan tools
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $installer = Join-Path $env:RUNNER_TEMP 'vulkan-sdk.exe'
+          Invoke-WebRequest 'https://sdk.lunarg.com/sdk/download/1.4.328.1/windows/vulkansdk-windows-X64-1.4.328.1.exe' -OutFile $installer
+          $sdk = Join-Path $env:RUNNER_TEMP 'vulkan-sdk'
+          $process = Start-Process -FilePath $installer -ArgumentList @('--root', $sdk, '--accept-licenses', '--default-answer', '--confirm-command', 'install') -Wait -PassThru -WindowStyle Hidden
+          if ($process.ExitCode -ne 0) { throw 'Vulkan SDK installation failed' }
+          "VULKAN_SDK=$sdk" | Add-Content $env:GITHUB_ENV
+      - name: Configure Windows
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          $header = Get-ChildItem $env:VULKAN_SDK -Recurse -Filter vulkan_core.h | Select-Object -First 1
+          $library = Get-ChildItem $env:VULKAN_SDK -Recurse -Filter vulkan-1.lib | Where-Object { $_.FullName -notmatch 'Lib32' } | Select-Object -First 1
+          if (!$header -or !$library) { throw 'Missing Vulkan SDK headers or library' }
+          $source = Join-Path (Get-Location) 'build/whisper-source'
+          cmake -S native/gpu -B build/gpu "-DWHISPER_SOURCE=$source" "-DVulkan_INCLUDE_DIR=$($header.Directory.Parent.FullName)" "-DVulkan_LIBRARY=$($library.FullName)" -A x64
+      - name: Configure Linux and macOS
+        if: runner.os != 'Windows'
+        shell: bash
+        run: cmake -S native/gpu -B build/gpu -DCMAKE_BUILD_TYPE=Release "-DWHISPER_SOURCE=$GITHUB_WORKSPACE/build/whisper-source" -DCMAKE_OSX_DEPLOYMENT_TARGET=11.0
+      - run: cmake --build build/gpu --config Release --parallel 4 --target speechlib-gpu
+      - run: python tools/package_gpu.py build/gpu ${{ matrix.platform }} ${{ matrix.backend }} --source ${{ github.sha }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: gpu-${{ matrix.platform }}
+          path: build/gpu-artifact/

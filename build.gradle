@@ -1,0 +1,56 @@
+plugins { id 'java-library'; id 'maven-publish' }
+group = 'dev.speechlib'
+repositories {
+    mavenCentral()
+    maven { url = 'https://maven.fabricmc.net/' }
+}
+dependencies {
+    compileOnly 'net.fabricmc:fabric-loader:0.16.14'
+    compileOnly 'com.google.code.gson:gson:2.10.1'
+    compileOnly 'net.java.dev.jna:jna:5.14.0'
+    compileOnly 'com.microsoft.onnxruntime:onnxruntime:1.23.2'
+    testImplementation 'net.fabricmc:fabric-loader:0.16.14'
+    testImplementation 'com.google.code.gson:gson:2.10.1'
+    testImplementation 'net.java.dev.jna:jna:5.14.0'
+    testImplementation platform('org.junit:junit-bom:5.12.2')
+    testImplementation 'org.junit.jupiter:junit-jupiter'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+java { sourceCompatibility = JavaVersion.VERSION_21; targetCompatibility = JavaVersion.VERSION_21; withSourcesJar(); withJavadocJar() }
+tasks.withType(JavaCompile).configureEach { options.release = 21; options.encoding = 'UTF-8' }
+tasks.withType(AbstractArchiveTask).configureEach { preserveFileTimestamps = false; reproducibleFileOrder = true }
+tasks.withType(Javadoc).configureEach { options.addBooleanOption('Xdoclint:none', true) }
+processResources {
+    inputs.property 'version', project.version
+    filesMatching('fabric.mod.json') { expand version: project.version }
+}
+jar { from('LICENSE') { rename { 'LICENSE_speechlib' } } }
+test {
+    useJUnitPlatform()
+    jvmArgs '--enable-native-access=ALL-UNNAMED'
+    systemProperties([
+        'speechlib.runtime.cache': layout.buildDirectory.dir('runtime-cache').get().asFile.absolutePath,
+        'speechlib.runtime.bundle': providers.gradleProperty('speech_runtime_bundle').orElse('').get(),
+        'speechlib.model.directory': providers.gradleProperty('speech_model_dir').orElse('').get(),
+        'speechlib.gpu.bundle': providers.gradleProperty('gpu_runtime_bundle').orElse('').get(),
+        'speechlib.gpu.model.directory': providers.gradleProperty('gpu_model_dir').orElse('').get(),
+        'speechlib.native.tests': providers.gradleProperty('native_tests').orElse('false').get(),
+        'speechlib.gpu.tests': providers.gradleProperty('gpu_tests').orElse('false').get()
+    ])
+}
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+            artifactId = 'speechlib'
+            pom {
+                name = 'SpeechLib'
+                description = 'Local Whisper speech recognition for Minecraft mods'
+                url = 'https://github.com/JustNeoNixy/SpeechLib'
+                licenses { license { name = 'MIT'; url = 'https://opensource.org/license/mit/' } }
+                scm { url = 'https://github.com/JustNeoNixy/SpeechLib' }
+            }
+        }
+    }
+    repositories { maven { name = 'site'; url = layout.buildDirectory.dir('site/maven') } }
+}

@@ -1,0 +1,15 @@
+{
+  "schemaVersion": 1,
+  "id": "speechlib",
+  "version": "${version}",
+  "name": "SpeechLib",
+  "description": "Local Whisper speech recognition for Minecraft mods. Models download on demand; audio stays on your computer.",
+  "authors": ["SpeechLib contributors", "SayItem contributors"],
+  "license": "MIT",
+  "environment": "*",
+  "contact": {
+    "sources": "https://github.com/JustNeoNixy/SpeechLib",
+    "issues": "https://github.com/JustNeoNixy/SpeechLib/issues"
+  },
+  "depends": { "fabricloader": ">=0.16.0", "minecraft": ">=1.21", "java": ">=21" }
+}
