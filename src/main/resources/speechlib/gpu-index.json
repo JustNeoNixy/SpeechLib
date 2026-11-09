@@ -1,5 +1,22 @@
 {
-  "runtimes": {},
+  "runtimes": {
+    "windows-x64": {
+      "url": "https://github.com/JustNeoNixy/SpeechLib/releases/download/runtime-gpu-1.0.0/speechlib-gpu-windows-x64.zip",
+      "bytes": 14511463,
+      "sha256": "e3fee22bce7805e8a67ceaabd9b8b6947d145fdc33ed5280f46670917a0cc4a8",
+      "files": {
+        "source.json": "feb22a5c699482a561eacf15de02cf9fae62d5e17952c0bc5ca06561ecd9ee73",
+        "speechlib-ggml-base.dll": "d108250f36ca090e797bc4564066b2bfd0041cb82afcf718d6eb2019654402d0",
+        "speechlib-ggml-cpu.dll": "d60de5c4c3e03b60530cdcb386f0e035a89f97dd5cde90695d081b868931056c",
+        "speechlib-ggml-vulkan.dll": "a35e5fea66ae5bbcb15313c01c2a86608a69b3ccb23727c9137b6a836192d10e",
+        "speechlib-ggml.dll": "c142b5baedf76082799e67f2648aa741eaa5197245745c813da17a83c1a26307",
+        "speechlib-gpu.dll": "bb8552dbecf45835fbb770ea25abeed3f480084f572569137819ce38d9df5fab",
+        "speechlib-whisper.dll": "17ef0a195976941dbf76840a3251cea049c2a105dbbc2e46789cd48fb3e5892e",
+        "whisper-MIT.txt": "bcd8ec749126d45cb06737d0690295d73df4b6e7e194205bcf91190368f27285"
+      },
+      "backend": "vulkan"
+    }
+  },
   "models": {
     "turbo": {
       "filename": "ggml-large-v3-turbo-q5_0.bin",

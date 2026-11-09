@@ -13,13 +13,10 @@ import java.util.zip.ZipInputStream;
 
 final class RuntimeBundles {
     record Loaded(Class<?> implementation, Path root) {
-        SpeechEngine create(Path cache) throws ReflectiveOperationException {
-            return (SpeechEngine) implementation.getConstructor(Path.class, Path.class).newInstance(cache, root);
-        }
-        SpeechEngine create(Path cache, SpeechProfile profile) throws ReflectiveOperationException {
-            if (!profile.gpu()) return create(cache);
-            var type = implementation.getClassLoader().loadClass("dev.speechlib.internal.local.VulkanEngine");
-            return (SpeechEngine) type.getConstructor(Path.class, SpeechProfile.class).newInstance(cache, profile);
+        SpeechEngine create(Path cache, SpeechProfile profile, Consumer<String> progress) throws ReflectiveOperationException {
+            if (!profile.gpu()) return (SpeechEngine) implementation.getConstructor(Path.class,Path.class,Consumer.class).newInstance(cache,root,progress);
+            var type = implementation.getClassLoader().loadClass("dev.speechlib.internal.local.GpuEngine");
+            return (SpeechEngine) type.getConstructor(Path.class,SpeechProfile.class,Consumer.class).newInstance(cache,profile,progress);
         }
     }
     private static Loaded loaded;
@@ -55,11 +52,12 @@ final class RuntimeBundles {
         loaded = new Loaded(loader.loadClass("dev.speechlib.internal.local.CTranslateEngine"), root);
         return loaded;
     }
-    static Path install(Path cache, String platform, JsonObject spec, String bundleProperty, Consumer<String> progress) throws IOException, InterruptedException {
+    static synchronized Path install(Path cache, String platform, JsonObject spec, String bundleProperty, Consumer<String> progress) throws IOException, InterruptedException {
         String override = System.getProperty("speechlib.runtime.cache", "");
         Path root = (override.isBlank() ? cache.resolve("runtimes") : Path.of(override))
             .resolve(platform + "-" + spec.get("sha256").getAsString().substring(0, 12)).toAbsolutePath();
         var files = spec.getAsJsonObject("files");
+        if(!valid(root,files))LegacyCache.copyRuntime(root,files);
         if (!valid(root, files)) {
             Path supplied = System.getProperty(bundleProperty, "").isBlank() ? null : Path.of(System.getProperty(bundleProperty));
             Path archive = root.resolveSibling(root.getFileName() + ".zip");

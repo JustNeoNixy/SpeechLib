@@ -27,7 +27,7 @@ jobs:
         with: {python-version: '3.12'}
       - name: Linux Vulkan tools
         if: runner.os == 'Linux'
-        run: sudo apt-get update && sudo apt-get install -y libvulkan-dev glslc
+        run: sudo apt-get update && sudo apt-get install -y libvulkan-dev glslc spirv-headers spirv-tools
       - name: Windows Vulkan tools
         if: runner.os == 'Windows'
         shell: pwsh

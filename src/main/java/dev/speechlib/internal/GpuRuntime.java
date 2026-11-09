@@ -14,19 +14,23 @@ public final class GpuRuntime {
     private GpuRuntime() {}
     public static boolean supportedPlatform() {
         if (Boolean.getBoolean("speechlib.gpu.disabled")) return false;
-        try { return RuntimeBundles.platform().equals("windows-x64"); }
+        try { return java.util.Set.of("windows-x64","linux-x64","linux-arm64","macos-x64","macos-arm64").contains(RuntimeBundles.platform()); }
         catch (IOException ignored) { return false; }
     }
     private static JsonObject index() throws IOException {
-        try (var stream = GpuRuntime.class.getResourceAsStream("/speechlib/vulkan-index.json")) {
-            if (stream == null) throw new IOException("Missing Vulkan speech manifest");
+        try (var stream = GpuRuntime.class.getResourceAsStream("/speechlib/gpu-index.json")) {
+            if (stream == null) throw new IOException("Missing GPU speech manifest");
             return JsonParser.parseReader(new InputStreamReader(stream, StandardCharsets.UTF_8)).getAsJsonObject();
         }
     }
     public static Path prepare(Path cache, Consumer<String> progress) throws IOException, InterruptedException {
-        if (!supportedPlatform()) throw new IOException("Vulkan speech currently requires Windows x64");
-        return RuntimeBundles.install(cache, "windows-x64-vulkan", index().getAsJsonObject("runtime"), "speechlib.gpu.bundle", progress);
+        if (!supportedPlatform()) throw new IOException("GPU speech is unavailable on this platform");
+        String platform=RuntimeBundles.platform();
+        var spec=index().getAsJsonObject("runtimes").getAsJsonObject(platform);
+        if(spec==null)throw new IOException("Missing GPU runtime for "+platform);
+        return RuntimeBundles.install(cache, platform+"-gpu", spec, "speechlib.gpu.bundle", progress);
     }
+    public static SpeechBackend backend(){return System.getProperty("os.name").toLowerCase(java.util.Locale.ROOT).contains("mac")?SpeechBackend.METAL:SpeechBackend.VULKAN;}
     public static Path model(Path cache, SpeechProfile profile, Consumer<String> progress) throws IOException, InterruptedException {
         String key = switch (profile) { case GPU_TURBO -> "turbo"; case GPU_SMALL -> "small"; default -> "base"; };
         var spec = index().getAsJsonObject("models").getAsJsonObject(key);

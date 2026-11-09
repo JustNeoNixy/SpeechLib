@@ -17,12 +17,20 @@ dependencies {
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 java { sourceCompatibility = JavaVersion.VERSION_21; targetCompatibility = JavaVersion.VERSION_21; withSourcesJar(); withJavadocJar() }
+sourceSets {
+    example {
+        java.srcDir 'examples'
+        compileClasspath += sourceSets.main.output + configurations.compileClasspath
+    }
+}
+tasks.named('check') { dependsOn tasks.named('compileExampleJava') }
 tasks.withType(JavaCompile).configureEach { options.release = 21; options.encoding = 'UTF-8' }
 tasks.withType(AbstractArchiveTask).configureEach { preserveFileTimestamps = false; reproducibleFileOrder = true }
 tasks.withType(Javadoc).configureEach { options.addBooleanOption('Xdoclint:none', true) }
 processResources {
-    inputs.property 'version', project.version
-    filesMatching('fabric.mod.json') { expand version: project.version }
+    def libraryVersion = project.version.toString()
+    inputs.property 'version', libraryVersion
+    filesMatching('fabric.mod.json') { expand version: libraryVersion }
 }
 jar { from('LICENSE') { rename { 'LICENSE_speechlib' } } }
 test {

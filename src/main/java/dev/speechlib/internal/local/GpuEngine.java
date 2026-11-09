@@ -12,44 +12,50 @@ import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /** Runs Whisper directly on the local GPU; no process, Python interpreter or network audio service. */
-public final class VulkanEngine implements SpeechEngine {
+public final class GpuEngine implements SpeechEngine {
     private final Path cache;
     private final SpeechProfile profile;
     private final ExecutorService worker = Executors.newSingleThreadExecutor(job -> {
-        Thread thread = new Thread(job, "speechlib-vulkan"); thread.setDaemon(true); return thread;
+        Thread thread = new Thread(job, "speechlib-gpu"); thread.setDaemon(true); return thread;
     });
     private final AtomicInteger aborted = new AtomicInteger();
-    private VulkanApi api;
+    private GpuApi api;
     private Pointer context;
     private SpeechFilter filter;
     private CompletableFuture<Void> loading;
     private volatile String status = "Preparing GPU speech…";
     private volatile boolean ready, closed, recognizing;
-    public VulkanEngine(Path cache, SpeechProfile profile) { this.cache = cache; this.profile = profile; }
+    private final java.util.function.Consumer<String> progress;
+    private volatile String deviceName="";
+    private void update(String text){status=text;progress.accept(text);}
+    public GpuEngine(Path cache, SpeechProfile profile, java.util.function.Consumer<String> progress){this.cache=cache;this.profile=profile;this.progress=progress;}
+    @Override public SpeechProfile activeProfile(){return profile;}
+    @Override public SpeechBackend backend(){return GpuRuntime.backend();}
+    @Override public String device(){return deviceName;}
     @Override public synchronized CompletableFuture<Void> initialize() {
         if (closed) return CompletableFuture.failedFuture(new IllegalStateException("Speech engine is closed"));
         if (loading != null) return loading;
         loading = CompletableFuture.runAsync(() -> {
             try {
-                Path root = GpuRuntime.prepare(cache, text -> status = text);
-                api = VulkanApi.load(root);
-                if (!api.sayitem_vk_version().equals("whisper.cpp-v1.9.5-d1be6fde-bridge3")) throw new IOException("GPU engine version mismatch");
-                String device = api.sayitem_vk_device();
-                if (device == null || device.isBlank()) throw new IOException("No compatible Vulkan GPU");
-                Path model = GpuRuntime.model(cache, profile, text -> status = text);
+                Path root = GpuRuntime.prepare(cache, this::update);
+                api = GpuApi.load(root);
+                if (!api.speechlib_gpu_version().equals("speechlib-whisper-d1be6fde-v1")) throw new IOException("GPU engine version mismatch");
+                String device = api.speechlib_gpu_device(); deviceName=device;
+                if (device == null || device.isBlank()) throw new IOException("No compatible GPU");
+                Path model = GpuRuntime.model(cache, profile, this::update);
                 byte[] error = new byte[2048];
-                context = api.sayitem_vk_load(model.toString(), 1, Math.max(1, Math.min(4, Runtime.getRuntime().availableProcessors()-1)), error, error.length);
+                context = api.speechlib_gpu_load(model.toString(), 1, Math.max(1, Math.min(4, Runtime.getRuntime().availableProcessors()-1)), error, error.length);
                 if (context == null) throw new IOException(Native.toString(error, "UTF-8"));
-                filter = new SpeechFilter(BundledModels.vad(cache, text -> status = text));
-                status = "Warming GPU speech…";
+                filter = new SpeechFilter(BundledModels.vad(cache, this::update));
+                update("Warming GPU speech");
                 var warmup = new CompletableFuture<String>();
                 if (closed) warmup.cancel(false);
                 infer(new float[16000], "en", warmup);
                 warmup.join();
                 if (closed) throw new IOException("Speech engine is closed");
-                ready = true; status = profile.label() + " ready · Vulkan · " + device;
+                ready = true; update(profile.label() + " ready · " + backend() + " · " + device);
             } catch (Exception | LinkageError error) {
-                release(); status = "GPU speech unavailable";
+                release();update("GPU speech unavailable");
                 throw new CompletionException(error);
             }
         }, worker);
@@ -80,14 +86,14 @@ public final class VulkanEngine implements SpeechEngine {
         if (result.isDone()) return;
         if (closed) { result.completeExceptionally(new IllegalStateException("Speech engine is closed")); return; }
         byte[] text = new byte[2048], error = new byte[2048];
-        VulkanApi.Cancelled cancel = data -> {
+        GpuApi.Cancelled cancel = data -> {
             boolean stop = closed || result.isCancelled();
             if (stop) aborted.incrementAndGet();
             return stop ? 1 : 0;
         };
         recognizing = true;
         try {
-            int count = api.sayitem_vk_transcribe(context, samples, samples.length, language, 5, text, text.length, cancel, null, error, error.length);
+            int count = api.speechlib_gpu_transcribe(context, samples, samples.length, language, 5, text, text.length, cancel, null, error, error.length);
             if (result.isCancelled()) return;
             if (count < 0) throw new IOException(Native.toString(error, "UTF-8"));
             String answer = Native.toString(text, "UTF-8").trim();
@@ -100,7 +106,7 @@ public final class VulkanEngine implements SpeechEngine {
         ready = false;
         if (filter != null) try { filter.close(); } catch (Exception ignored) { }
         filter = null;
-        if (context != null) { api.sayitem_vk_free(context); context = null; }
+        if (context != null) { api.speechlib_gpu_free(context); context = null; }
     }
     @Override public String status() { return status; }
     @Override public boolean isReady() { return ready && !closed; }

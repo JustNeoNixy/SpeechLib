@@ -11,10 +11,21 @@ import java.util.function.Consumer;
 
 /** Optional local speech data downloads; audio is never sent through this client. */
 public final class AssetDownloads {
+    private static final java.util.concurrent.ConcurrentMap<Path,java.util.concurrent.locks.ReentrantLock> LOCKS=new java.util.concurrent.ConcurrentHashMap<>();
     private AssetDownloads() {}
     public static Path ensure(Path target, URI url, String hash, long bytes, Path supplied,
                               Consumer<String> progress, String label) throws IOException, InterruptedException {
+        var lock=LOCKS.computeIfAbsent(target.toAbsolutePath().normalize(),path->new java.util.concurrent.locks.ReentrantLock());
+        lock.lockInterruptibly();
+        try{return ensureLocked(target,url,hash,bytes,supplied,progress,label);}finally{lock.unlock();}
+    }
+    private static Path ensureLocked(Path target,URI url,String hash,long bytes,Path supplied,
+                                    Consumer<String> progress,String label)throws IOException,InterruptedException {
         if (Files.isRegularFile(target) && Files.size(target) == bytes && BundledFiles.sha256(target).equals(hash)) return target;
+        if(supplied==null) {
+            Path legacy=LegacyCache.source(target);
+            if(legacy!=null && Files.isRegularFile(legacy) && Files.size(legacy)==bytes && BundledFiles.sha256(legacy).equals(hash)) supplied=legacy;
+        }
         Files.createDirectories(target.toAbsolutePath().getParent());
         Path temp = Files.createTempFile(target.toAbsolutePath().getParent(), "download-", ".part");
         try {

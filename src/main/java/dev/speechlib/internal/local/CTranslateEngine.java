@@ -28,7 +28,9 @@ public final class CTranslateEngine implements SpeechEngine {
     private volatile boolean ready, closed, recognizing;
 
     private final Path runtime;
-    public CTranslateEngine(Path cache, Path runtime) { this.cache = cache; this.runtime = runtime; }
+    private final java.util.function.Consumer<String> progress;
+    private void update(String text) { status=text;progress.accept(text); }
+    public CTranslateEngine(Path cache, Path runtime, java.util.function.Consumer<String> progress) { this.cache=cache;this.runtime=runtime;this.progress=progress; }
     public String status() { return status; }
     public boolean isReady() { return ready && !closed; }
     public boolean isRecognizing() { return recognizing; }
@@ -40,8 +42,8 @@ public final class CTranslateEngine implements SpeechEngine {
         if (loading != null) return loading;
         loading = CompletableFuture.runAsync(() -> {
             try {
-                status = "Preparing bundled Whisper model…";
-                var model = BundledModels.prepare(cache, text -> status = text);
+                update("Preparing Whisper model");
+                var model = BundledModels.prepare(cache, this::update);
                 tokenizer = new WhisperTokenizer(model.model().resolve("tokenizer.json"));
                 engine = Native.load(NativeLibraries.load(runtime).toString(), CTranslateApi.class,
                     Map.of(Library.OPTION_STRING_ENCODING, "UTF-8"));
@@ -51,9 +53,9 @@ public final class CTranslateEngine implements SpeechEngine {
                     Runtime.getRuntime().availableProcessors() - 1)), error, error.length);
                 if (context == null) throw new IOException(Native.toString(error, "UTF-8"));
                 filter = new SpeechFilter(model.vad());
-                ready = true; status = "Whisper ready · CTranslate2 INT8 · fully local";
+                ready = true; update("Whisper ready · CTranslate2 INT8 · fully local");
             } catch (Exception | LinkageError e) {
-                status = "Whisper unavailable: " + (e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage());
+                update("Whisper unavailable: " + (e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage()));
                 if (context != null) { engine.sayitem_ct2_free(context); context = null; }
                 throw new CompletionException(e);
             }

@@ -4,28 +4,32 @@ import dev.speechlib.*;
 
 import java.nio.file.Path;
 import java.util.concurrent.*;
+import java.util.function.Consumer;
 
 /** Tiny facade. Downloads local-only speech libraries once, without adding them to Fabric's mod list. */
 public final class WhisperSession implements SpeechEngine {
     public static final String MODEL_SHA = "d01c3014881c9c6f3133c182f3d2887eb6ca1c789a7538c5c007196857a0a6a9";
     private final Path cache;
     private final SpeechProfile profile;
+    private final Consumer<String> progress;
     private CompletableFuture<Void> loading;
     private volatile SpeechEngine delegate;
     private volatile String message = "Preparing local speech…";
     private volatile boolean closed;
     private volatile boolean gpuFallback;
-    public WhisperSession(Path cache) { this(cache, SpeechProfile.CPU); }
-    public WhisperSession(Path cache, SpeechProfile profile) { this.cache = cache; this.profile = profile; }
+    public WhisperSession(Path cache, SpeechProfile profile, Consumer<String> progress) {
+        this.cache = cache; this.profile = profile; this.progress = progress;
+    }
+    private void update(String text) { message=text;progress.accept(text); }
     public synchronized CompletableFuture<Void> initialize() {
         if (closed) return CompletableFuture.failedFuture(new IllegalStateException("Speech engine is closed"));
         if (loading != null) return loading;
         loading = CompletableFuture.runAsync(() -> {
             try {
-                var runtime = RuntimeBundles.load(cache, text -> message = text);
+                var runtime = RuntimeBundles.load(cache, this::update);
                 synchronized (this) {
                     if (closed) return;
-                    delegate = runtime.create(cache, profile);
+                    delegate = runtime.create(cache, profile, this::update);
                 }
                 try { delegate.initialize().join(); }
                 catch (Exception | LinkageError gpuError) {
@@ -33,14 +37,14 @@ public final class WhisperSession implements SpeechEngine {
                     delegate.close(); gpuFallback = true;
                     synchronized (this) {
                         if (closed) return;
-                        delegate = runtime.create(cache);
+                        delegate = runtime.create(cache, SpeechProfile.CPU, this::update);
                     }
                     delegate.initialize().join();
                 }
                 if (closed) delegate.close();
             } catch (Exception | LinkageError e) {
                 Throwable cause = e; while (cause.getCause() != null) cause = cause.getCause();
-                message = "Speech unavailable: " + cause.getMessage();
+                update("Speech unavailable: " + cause.getMessage());
                 throw new CompletionException(cause);
             }
         }, job -> Thread.ofVirtual().name("speechlib-runtime").start(job));
@@ -61,6 +65,9 @@ public final class WhisperSession implements SpeechEngine {
         return result;
     }
     public String status() { return delegate == null ? message : (gpuFallback ? "GPU unavailable · using CPU · " : "") + delegate.status(); }
+    @Override public SpeechProfile activeProfile() { return delegate == null ? profile : delegate.activeProfile(); }
+    @Override public SpeechBackend backend() { return delegate == null ? SpeechBackend.CPU : delegate.backend(); }
+    @Override public String device() { return delegate == null ? "" : delegate.device(); }
     public boolean isReady() { return !closed && delegate != null && delegate.isReady(); }
     public boolean isRecognizing() { return delegate != null && delegate.isRecognizing(); }
     public int cancelledJobs() { return delegate == null ? 0 : delegate.cancelledJobs(); }
