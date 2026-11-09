@@ -12,9 +12,7 @@ It requires Fabric Loader and Java 21+. SayItem integration is checked on Minecr
 **Sides:** SpeechLib can run on the client or server. A speech-to-chat mod normally
 needs it only on the client; a server mod could explicitly supply audio for transcription.
 SpeechLib adds no audio networking, and installing it on a server starts no downloads
-or microphone capture. The dependent mod decides where it is required: SayItem
-currently requires SpeechLib on both sides, while running speech only on clients.
-For Modrinth, use [Client or server / Works the same on either](https://modrinth.com/news/article/new-environments/#how-does-the-new-system-work).
+or microphone capture. The dependent mod decides where it is required.
 
 ## Add to a project
 
@@ -32,7 +30,6 @@ dependencies {
 Older Loom projects can use `modImplementation` in place of `implementation`.
 Add `"speechlib": ">=1.0.0"` to your `fabric.mod.json`'s existing `depends` object.
 Keep SpeechLib as a separate dependency; do not shade or nest it in your jar.
-When publishing on Modrinth, mark SpeechLib as a required dependency there too.
 Your own mod can still require Fabric API separately.
 
 ## Use the API
