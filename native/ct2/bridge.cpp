@@ -8,11 +8,11 @@
 #define API extern "C" __attribute__((visibility("default")))
 #endif
 using Check = int (*)(void *);
-API const char *sayitem_ct2_version() { return "4.8.4"; }
+API const char *speechlib_ct2_version() { return "4.8.4"; }
 static void error_text(char *out, int cap, const char *message) {
     if (out && cap > 0) { std::strncpy(out, message, cap - 1); out[cap - 1] = 0; }
 }
-API void * sayitem_ct2_load(const char *path, int threads, char *error, int capacity) {
+API void * speechlib_ct2_load(const char *path, int threads, char *error, int capacity) {
     try {
         ctranslate2::ReplicaPoolConfig config;
         config.num_threads_per_replica = threads;
@@ -20,8 +20,8 @@ API void * sayitem_ct2_load(const char *path, int threads, char *error, int capa
             ctranslate2::ComputeType::INT8, {0}, false, config);
     } catch (const std::exception &e) { error_text(error, capacity, e.what()); return nullptr; }
 }
-API void sayitem_ct2_free(void *pointer) { delete static_cast<ctranslate2::models::Whisper *>(pointer); }
-API int sayitem_ct2_transcribe(void *pointer, float *features, int *prefix, int prefix_count,
+API void speechlib_ct2_free(void *pointer) { delete static_cast<ctranslate2::models::Whisper *>(pointer); }
+API int speechlib_ct2_transcribe(void *pointer, float *features, int *prefix, int prefix_count,
         int *tokens, int capacity, float *metrics, Check cancelled, void *data, char *error, int error_capacity) {
     try {
         auto &model = *static_cast<ctranslate2::models::Whisper *>(pointer);
@@ -32,7 +32,7 @@ API int sayitem_ct2_transcribe(void *pointer, float *features, int *prefix, int 
         std::vector<size_t> prompt(prefix, prefix + prefix_count);
         ctranslate2::models::WhisperOptions options;
         options.beam_size = 5;
-        options.max_length = 64;
+        options.max_length = 128;
         options.return_scores = true;
         options.return_no_speech_prob = true;
         auto result = model.generate(encoded, std::vector<std::vector<size_t>>{prompt}, options)[0].get();

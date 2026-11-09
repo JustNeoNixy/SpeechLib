@@ -42,7 +42,7 @@ if args.package:
         target.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy2(dest / 'runtime' / name, target)
     extension = 'dll' if args.platform.startswith('windows') else 'dylib' if args.platform.startswith('macos') else 'so'
-    wrapper = f'sayitem-ct2.{extension}'
+    wrapper = f'speechlib-ct2.{extension}'
     shutil.copy2(dest / 'compiled' / 'output' / wrapper, output / wrapper)
     if sys.platform == 'darwin':
         # The official wheels use a /DLC install name. Make every bundled reference relocatable.
@@ -64,8 +64,8 @@ if args.package:
         for directory in {str((output / name).parent) for name in files}:
             dll_directories.append(os.add_dll_directory(directory))
     engine = ctypes.CDLL(str(output / wrapper))
-    engine.sayitem_ct2_version.restype = ctypes.c_char_p
-    if engine.sayitem_ct2_version() != b'4.8.4': raise RuntimeError('Unexpected native engine version')
-    for symbol in ('sayitem_ct2_load', 'sayitem_ct2_free', 'sayitem_ct2_transcribe'):
+    engine.speechlib_ct2_version.restype = ctypes.c_char_p
+    if engine.speechlib_ct2_version() != b'4.8.4': raise RuntimeError('Unexpected native engine version')
+    for symbol in ('speechlib_ct2_load', 'speechlib_ct2_free', 'speechlib_ct2_transcribe'):
         getattr(engine, symbol)
     print(f'Native CTranslate2 bridge verified: {args.platform}')
