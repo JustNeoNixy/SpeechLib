@@ -82,6 +82,7 @@ These are planning estimates with headroom, not guaranteed minimums. Minecraft,
 textures, and shaders need additional memory. On Apple Silicon, GPU allocations
 come from shared system RAM. Download size is smaller than working memory usage.
 Low free VRAM or sharing a busy GPU can cause stalls; a larger model is not always faster.
+Different active profiles can keep separate models loaded, so their budgets add up.
 
 - CPU: Windows x64, Linux x64/ARM64, macOS x64/ARM64, using CTranslate2 INT8.
 - GPU: Vulkan on Windows x64 and Linux x64/ARM64; Metal on macOS x64/ARM64.
