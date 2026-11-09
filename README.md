@@ -1,13 +1,20 @@
 # SpeechLib
 
 Local Whisper speech recognition for Minecraft mods, extracted from
-[SayItem](https://github.com/JustNeoNixy/SayItem). Audio stays on the player's computer.
+[SayItem](https://github.com/JustNeoNixy/SayItem). Audio is processed on the machine running the engine.
 The small library mod downloads checked native libraries and model weights when used.
 
 SpeechLib is a normal **Fabric mod jar**. Players install it alongside the mod that
 uses it. It bundles no other mods or Fabric API and needs no Python or companion app.
 It requires Fabric Loader and Java 21+. SayItem integration is checked on Minecraft
 26.1.2, 26.2, and 26.3; the public API uses no Minecraft internals.
+
+**Sides:** SpeechLib can run on the client or server. A speech-to-chat mod normally
+needs it only on the client; a server mod could explicitly supply audio for transcription.
+SpeechLib adds no audio networking, and installing it on a server starts no downloads
+or microphone capture. The dependent mod decides where it is required: SayItem
+currently requires SpeechLib on both sides, while running speech only on clients.
+For Modrinth, use [Client or server / Works the same on either](https://modrinth.com/news/article/new-environments/#how-does-the-new-system-work).
 
 ## Add to a project
 
