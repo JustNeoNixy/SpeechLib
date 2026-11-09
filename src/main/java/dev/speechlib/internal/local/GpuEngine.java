@@ -25,6 +25,7 @@ public final class GpuEngine implements SpeechEngine {
     private CompletableFuture<Void> loading;
     private volatile String status = "Preparing GPU speech…";
     private volatile boolean ready, closed, recognizing;
+    private volatile Thread preparing;
     private final java.util.function.Consumer<String> progress;
     private volatile String deviceName="";
     private void update(String text){status=text;progress.accept(text);}
@@ -36,7 +37,9 @@ public final class GpuEngine implements SpeechEngine {
         if (closed) return CompletableFuture.failedFuture(new IllegalStateException("Speech engine is closed"));
         if (loading != null) return loading;
         loading = CompletableFuture.runAsync(() -> {
+            preparing=Thread.currentThread();
             try {
+                if(closed)throw new CancellationException("Speech engine closed");
                 Path root = GpuRuntime.prepare(cache, this::update);
                 api = GpuApi.load(root);
                 if (!api.speechlib_gpu_version().equals("speechlib-whisper-d1be6fde-v1")) throw new IOException("GPU engine version mismatch");
@@ -57,7 +60,7 @@ public final class GpuEngine implements SpeechEngine {
             } catch (Exception | LinkageError error) {
                 release();update("GPU speech unavailable");
                 throw new CompletionException(error);
-            }
+            } finally {preparing=null;}
         }, worker);
         return loading;
     }
@@ -85,7 +88,7 @@ public final class GpuEngine implements SpeechEngine {
     private void infer(float[] samples, String language, CompletableFuture<String> result) {
         if (result.isDone()) return;
         if (closed) { result.completeExceptionally(new IllegalStateException("Speech engine is closed")); return; }
-        byte[] text = new byte[2048], error = new byte[2048];
+        byte[] text = new byte[8192], error = new byte[2048];
         GpuApi.Cancelled cancel = data -> {
             boolean stop = closed || result.isCancelled();
             if (stop) aborted.incrementAndGet();
@@ -97,7 +100,7 @@ public final class GpuEngine implements SpeechEngine {
             if (result.isCancelled()) return;
             if (count < 0) throw new IOException(Native.toString(error, "UTF-8"));
             String answer = Native.toString(text, "UTF-8").trim();
-            if (answer.length() > 256) throw new IOException("Say only the displayed item name");
+            if (answer.length() > 2048) throw new IOException("Speech result exceeds the 2048-character limit");
             result.complete(answer);
         } catch (Exception | LinkageError failure) { result.completeExceptionally(failure); }
         finally { recognizing = false; Reference.reachabilityFence(cancel); }
@@ -116,5 +119,6 @@ public final class GpuEngine implements SpeechEngine {
     @Override public synchronized void close() {
         if (closed) return;
         closed = true; ready = false; worker.execute(this::release); worker.shutdown();
+        Thread thread=preparing;if(thread!=null)thread.interrupt();
     }
 }

@@ -26,6 +26,7 @@ public final class CTranslateEngine implements SpeechEngine {
     private Pointer context;
     private volatile String status = "Whisper is starting…";
     private volatile boolean ready, closed, recognizing;
+    private volatile Thread preparing;
 
     private final Path runtime;
     private final java.util.function.Consumer<String> progress;
@@ -41,24 +42,26 @@ public final class CTranslateEngine implements SpeechEngine {
         if (closed) return CompletableFuture.failedFuture(new IllegalStateException("Speech engine is closed"));
         if (loading != null) return loading;
         loading = CompletableFuture.runAsync(() -> {
+            preparing=Thread.currentThread();
             try {
+                if(closed)throw new CancellationException("Speech engine closed");
                 update("Preparing Whisper model");
                 var model = BundledModels.prepare(cache, this::update);
                 tokenizer = new WhisperTokenizer(model.model().resolve("tokenizer.json"));
                 engine = Native.load(NativeLibraries.load(runtime).toString(), CTranslateApi.class,
                     Map.of(Library.OPTION_STRING_ENCODING, "UTF-8"));
-                if (!engine.sayitem_ct2_version().equals("4.8.4")) throw new IOException("Speech engine version mismatch");
+                if (!engine.speechlib_ct2_version().equals("4.8.4")) throw new IOException("Speech engine version mismatch");
                 byte[] error = new byte[2048];
-                context = engine.sayitem_ct2_load(model.model().toString(), Math.max(1, Math.min(4,
+                context = engine.speechlib_ct2_load(model.model().toString(), Math.max(1, Math.min(4,
                     Runtime.getRuntime().availableProcessors() - 1)), error, error.length);
                 if (context == null) throw new IOException(Native.toString(error, "UTF-8"));
                 filter = new SpeechFilter(model.vad());
                 ready = true; update("Whisper ready · CTranslate2 INT8 · fully local");
             } catch (Exception | LinkageError e) {
                 update("Whisper unavailable: " + (e.getMessage() == null ? e.getClass().getSimpleName() : e.getMessage()));
-                if (context != null) { engine.sayitem_ct2_free(context); context = null; }
+                if (context != null) { engine.speechlib_ct2_free(context); context = null; }
                 throw new CompletionException(e);
-            }
+            } finally {preparing=null;}
         }, worker);
         return loading;
     }
@@ -98,7 +101,7 @@ public final class CTranslateEngine implements SpeechEngine {
             };
             recognizing = true;
             int count;
-            try { count = engine.sayitem_ct2_transcribe(context, mel, prefix, prefix.length,
+            try { count = engine.speechlib_ct2_transcribe(context, mel, prefix, prefix.length,
                     tokens, tokens.length, metrics, abort, null, error, error.length); }
             finally { recognizing = false; Reference.reachabilityFence(abort); }
             if (result.isCancelled()) return;
@@ -109,7 +112,7 @@ public final class CTranslateEngine implements SpeechEngine {
                 result.complete(""); return;
             }
             String answer = tokenizer.decode(tokens, count);
-            if (answer.length() > 256) throw new IOException("Say only the displayed item name.");
+            if (answer.length() > 2048) throw new IOException("Speech result exceeds the 2048-character limit");
             result.complete(answer);
         } catch (Exception | LinkageError e) { result.completeExceptionally(e); }
         finally { recognizing = false; }
@@ -118,9 +121,10 @@ public final class CTranslateEngine implements SpeechEngine {
     @Override public synchronized void close() {
         if (closed) return;
         closed = true; ready = false;
+        Thread thread=preparing;if(thread!=null)thread.interrupt();
         worker.execute(() -> {
             if (filter != null) try { filter.close(); } catch (Exception ignored) { }
-            if (context != null) { engine.sayitem_ct2_free(context); context = null; }
+            if (context != null) { engine.speechlib_ct2_free(context); context = null; }
         });
         worker.shutdown();
     }

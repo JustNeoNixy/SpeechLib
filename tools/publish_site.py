@@ -4,6 +4,9 @@ import json
 import re
 import subprocess
 import zipfile
+import hashlib
+import xml.etree.ElementTree as ET
+from datetime import datetime, timezone
 from pathlib import Path
 
 parser=argparse.ArgumentParser();parser.add_argument('tag');args=parser.parse_args()
@@ -29,5 +32,18 @@ for release in releases:
             if not target.is_relative_to(site.resolve())or not entry.filename.startswith('maven/'):raise RuntimeError('Invalid Maven archive path')
             if entry.is_dir()or target.exists():continue
             target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(previous.read(entry))
+artifact=maven/'dev/speechlib/speechlib'
+versions=sorted((p.name for p in artifact.iterdir() if p.is_dir() and re.fullmatch(r'\d+\.\d+\.\d+(?:-[a-zA-Z0-9.]+)?',p.name)),key=lambda v:tuple(int(n)for n in v.split('-')[0].split('.'))+(v,))
+metadata=ET.Element('metadata')
+ET.SubElement(metadata,'groupId').text='dev.speechlib';ET.SubElement(metadata,'artifactId').text='speechlib'
+versioning=ET.SubElement(metadata,'versioning');ET.SubElement(versioning,'latest').text=versions[-1]
+stable=[v for v in versions if '-'not in v]
+if stable:ET.SubElement(versioning,'release').text=stable[-1]
+entries=ET.SubElement(versioning,'versions')
+for version in versions:ET.SubElement(entries,'version').text=version
+ET.SubElement(versioning,'lastUpdated').text=datetime.now(timezone.utc).strftime('%Y%m%d%H%M%S')
+payload=ET.tostring(metadata,encoding='utf-8',xml_declaration=True)
+target=artifact/'maven-metadata.xml';target.write_bytes(payload)
+for algorithm in ('md5','sha1','sha256','sha512'):Path(str(target)+'.'+algorithm).write_text(hashlib.new(algorithm,payload).hexdigest(),encoding='ascii')
 subprocess.run(['gh','release','upload',args.tag,str(archive),'--repo','JustNeoNixy/SpeechLib','--clobber'],check=True)
 (site/'index.html').write_text('<!doctype html><meta charset="utf-8"><title>SpeechLib Maven repository</title><h1>SpeechLib</h1><p>Maven repository: <code>https://justneonixy.github.io/SpeechLib/maven</code></p><p><a href="https://github.com/JustNeoNixy/SpeechLib">Source, setup and API examples</a></p>\n',encoding='utf-8')

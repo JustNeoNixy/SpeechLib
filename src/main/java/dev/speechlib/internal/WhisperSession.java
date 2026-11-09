@@ -17,6 +17,7 @@ public final class WhisperSession implements SpeechEngine {
     private volatile String message = "Preparing local speech…";
     private volatile boolean closed;
     private volatile boolean gpuFallback;
+    private volatile Thread preparing;
     public WhisperSession(Path cache, SpeechProfile profile, Consumer<String> progress) {
         this.cache = cache; this.profile = profile; this.progress = progress;
     }
@@ -25,7 +26,9 @@ public final class WhisperSession implements SpeechEngine {
         if (closed) return CompletableFuture.failedFuture(new IllegalStateException("Speech engine is closed"));
         if (loading != null) return loading;
         loading = CompletableFuture.runAsync(() -> {
+            preparing=Thread.currentThread();
             try {
+                if(closed)throw new CancellationException("Speech handle closed");
                 var runtime = RuntimeBundles.load(cache, this::update);
                 synchronized (this) {
                     if (closed) return;
@@ -46,7 +49,7 @@ public final class WhisperSession implements SpeechEngine {
                 Throwable cause = e; while (cause.getCause() != null) cause = cause.getCause();
                 update("Speech unavailable: " + cause.getMessage());
                 throw new CompletionException(cause);
-            }
+            } finally {preparing=null;}
         }, job -> Thread.ofVirtual().name("speechlib-runtime").start(job));
         return loading;
     }
@@ -73,5 +76,8 @@ public final class WhisperSession implements SpeechEngine {
     public int cancelledJobs() { return delegate == null ? 0 : delegate.cancelledJobs(); }
     int nativeAborts() { return cancelledJobs(); }
     public CompletableFuture<Void> whenIdle() { return delegate == null ? CompletableFuture.completedFuture(null) : delegate.whenIdle(); }
-    @Override public synchronized void close() { closed = true; if (delegate != null) delegate.close(); }
+    @Override public synchronized void close() {
+        closed=true;Thread thread=preparing;if(thread!=null)thread.interrupt();
+        if(delegate!=null)delegate.close();
+    }
 }

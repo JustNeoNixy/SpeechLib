@@ -2,19 +2,103 @@
   "runtimes": {
     "windows-x64": {
       "url": "https://github.com/JustNeoNixy/SpeechLib/releases/download/runtime-gpu-1.0.0/speechlib-gpu-windows-x64.zip",
-      "bytes": 14511463,
-      "sha256": "e3fee22bce7805e8a67ceaabd9b8b6947d145fdc33ed5280f46670917a0cc4a8",
+      "bytes": 14511467,
+      "sha256": "bfaa812d2b2623c973197f65642b9523beb9c047a887cf4a8b0161c8674a464e",
       "files": {
-        "source.json": "feb22a5c699482a561eacf15de02cf9fae62d5e17952c0bc5ca06561ecd9ee73",
-        "speechlib-ggml-base.dll": "d108250f36ca090e797bc4564066b2bfd0041cb82afcf718d6eb2019654402d0",
-        "speechlib-ggml-cpu.dll": "d60de5c4c3e03b60530cdcb386f0e035a89f97dd5cde90695d081b868931056c",
-        "speechlib-ggml-vulkan.dll": "a35e5fea66ae5bbcb15313c01c2a86608a69b3ccb23727c9137b6a836192d10e",
-        "speechlib-ggml.dll": "c142b5baedf76082799e67f2648aa741eaa5197245745c813da17a83c1a26307",
-        "speechlib-gpu.dll": "bb8552dbecf45835fbb770ea25abeed3f480084f572569137819ce38d9df5fab",
-        "speechlib-whisper.dll": "17ef0a195976941dbf76840a3251cea049c2a105dbbc2e46789cd48fb3e5892e",
+        "source.json": "5c790d1009e8f18f8478b10017b83f9467c0950ae54b8e5d0ed038e465a9ece6",
+        "speechlib-ggml-base.dll": "33130e999d683c7ba911d715163590c3e98abc9fc499a815ec74bff33b7aaf64",
+        "speechlib-ggml-cpu.dll": "1a5d106f3032341db6b07f5ea0c4d0e1fce452c347b7023233f5e45f2f4d488d",
+        "speechlib-ggml-vulkan.dll": "cae281c383af3155bdaeb8c689b1685b450dd8e14686cd642b7d4b6c1118a626",
+        "speechlib-ggml.dll": "fc898a883fff119d20f39cf5395063354ad87e91a82c02b8ebf97b1f247df36d",
+        "speechlib-gpu.dll": "c1f9eb9629b4b554bf0e86ef52a7d4b81b218c54920e49df5e4a4e08c46beb06",
+        "speechlib-whisper.dll": "ef153e2c00a85c9d97dddd9e46b031eefb0e5ef4f73d546da62778a40772b7ac",
         "whisper-MIT.txt": "bcd8ec749126d45cb06737d0690295d73df4b6e7e194205bcf91190368f27285"
       },
       "backend": "vulkan"
+    },
+    "linux-x64": {
+      "url": "https://github.com/JustNeoNixy/SpeechLib/releases/download/runtime-gpu-1.0.0/speechlib-gpu-linux-x64.zip",
+      "bytes": 24339355,
+      "sha256": "e2d5b9acedc52c3bced795cc8ab849b7f14a77456524d08f918a82f0af371c06",
+      "files": {
+        "libspeechlib-ggml-base.so": "710b475bd2f7326e7b0a765a6a58dfd7273426c7b822f478bd447b9ce236be3c",
+        "libspeechlib-ggml-base.so.1": "710b475bd2f7326e7b0a765a6a58dfd7273426c7b822f478bd447b9ce236be3c",
+        "libspeechlib-ggml-cpu.so": "fbfd6e61795bbec49ad7cddec30cdf8705a0344fa473de5845993a4ceed7cde6",
+        "libspeechlib-ggml-cpu.so.1": "fbfd6e61795bbec49ad7cddec30cdf8705a0344fa473de5845993a4ceed7cde6",
+        "libspeechlib-ggml-vulkan.so": "20d06df34f5ef3d974ab216fb3ac05af8e849fffe52c51d1a1fb7e1ef4e4e26d",
+        "libspeechlib-ggml-vulkan.so.1": "20d06df34f5ef3d974ab216fb3ac05af8e849fffe52c51d1a1fb7e1ef4e4e26d",
+        "libspeechlib-ggml.so": "77f40ce6c23ef766e1c78ec4e1cb566b215f417199bb34edee497077c4bcc304",
+        "libspeechlib-ggml.so.1": "77f40ce6c23ef766e1c78ec4e1cb566b215f417199bb34edee497077c4bcc304",
+        "libspeechlib-whisper.so": "59254529349eaa4580d97ef77896cbc3bdb2fa61d9d15932bbfa24027f7352c2",
+        "libspeechlib-whisper.so.1": "59254529349eaa4580d97ef77896cbc3bdb2fa61d9d15932bbfa24027f7352c2",
+        "source.json": "1932f29d436b9fd88a21116f847c796ba522072757a7d6f2cede8486a07868bc",
+        "speechlib-gpu.so": "e43fad1abd30db9de504e664652d70035d54c14aacb681e1eba3687a519bc888",
+        "whisper-MIT.txt": "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d"
+      },
+      "backend": "vulkan"
+    },
+    "linux-arm64": {
+      "url": "https://github.com/JustNeoNixy/SpeechLib/releases/download/runtime-gpu-1.0.0/speechlib-gpu-linux-arm64.zip",
+      "bytes": 24201280,
+      "sha256": "5fea64e2ff9172e633288a4193c102e2312314a1cfce386829735b49a522f21e",
+      "files": {
+        "libspeechlib-ggml-base.so": "50ff12d25235882faecf4cffa911c9b0809aee905689729fdd0765ed70383046",
+        "libspeechlib-ggml-base.so.1": "50ff12d25235882faecf4cffa911c9b0809aee905689729fdd0765ed70383046",
+        "libspeechlib-ggml-cpu.so": "409793a8628eb02e584cbc5189b1b7a19154e3825741a7c0b0b7f3bf6519d5c8",
+        "libspeechlib-ggml-cpu.so.1": "409793a8628eb02e584cbc5189b1b7a19154e3825741a7c0b0b7f3bf6519d5c8",
+        "libspeechlib-ggml-vulkan.so": "9c42c3d92c35291c261ad3783819c8b1230d9c12f83778545d213fdb96158a9a",
+        "libspeechlib-ggml-vulkan.so.1": "9c42c3d92c35291c261ad3783819c8b1230d9c12f83778545d213fdb96158a9a",
+        "libspeechlib-ggml.so": "bc1ea92342d349ef29bde23a29e32c0b75f754445f7403271df3d621b4b7140e",
+        "libspeechlib-ggml.so.1": "bc1ea92342d349ef29bde23a29e32c0b75f754445f7403271df3d621b4b7140e",
+        "libspeechlib-whisper.so": "94097fd0d67dc9da3f54c17d406a2c4aca1082ee1548f4af5411eff2424cd902",
+        "libspeechlib-whisper.so.1": "94097fd0d67dc9da3f54c17d406a2c4aca1082ee1548f4af5411eff2424cd902",
+        "source.json": "1932f29d436b9fd88a21116f847c796ba522072757a7d6f2cede8486a07868bc",
+        "speechlib-gpu.so": "095325dea055964b88a5d546215624b7db97bcaa309e5d47213c64218b6945b5",
+        "whisper-MIT.txt": "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d"
+      },
+      "backend": "vulkan"
+    },
+    "macos-x64": {
+      "url": "https://github.com/JustNeoNixy/SpeechLib/releases/download/runtime-gpu-1.0.0/speechlib-gpu-macos-x64.zip",
+      "bytes": 3881105,
+      "sha256": "181efe90e11e156693db85f610697eeba6406a606baa2ec17112c77f50f1dc21",
+      "files": {
+        "libspeechlib-ggml-base.1.dylib": "572b184cbb071a59c2b62d834a44b3597b074ef803d9c3d8fbfc2ed65544522b",
+        "libspeechlib-ggml-base.dylib": "c49aca0e1023d522955ec62c2fb67a4e59e53632b92096c44cfd356804da57fe",
+        "libspeechlib-ggml-cpu.1.dylib": "65780c40fead2917135857ec10c97ca834dddf63707303dedbaedcd615256a99",
+        "libspeechlib-ggml-cpu.dylib": "b8b460d81bc2820c272e0d31e21895253dff1371ebf945f295b9e4e7a085c6e0",
+        "libspeechlib-ggml-metal.1.dylib": "6c5ed4c369a36687ce660d996791497ab6126e3e32b712bd59c530e435262384",
+        "libspeechlib-ggml-metal.dylib": "f1fad2b1b7bd95d7b46682d4a4cdd5485cda92eb7df8b5e221c6665857d57483",
+        "libspeechlib-ggml.1.dylib": "1f5605675038b4645c92cf360414cf27adec1ff6b55319f33d60f090f663d65d",
+        "libspeechlib-ggml.dylib": "4baa104abb856cad44727d9809e89ebd9009e5e87cd0db0f48b7c7a7be6eb499",
+        "libspeechlib-whisper.1.dylib": "c072df3d18c10dc8740520921fc686e55ddfea39c2843c8e59a8405ec8a2b0c8",
+        "libspeechlib-whisper.dylib": "1cf702a59ce2ee6f2a8785ea895d246168f6b9bad1695b7b20de89f9a024aae9",
+        "source.json": "87631f8d658eb07f89704353f8489c98c7c0cad4873148380be3e7cd6f0cdb2e",
+        "speechlib-gpu.dylib": "33dd140e6dc55c7ef985b96fa500608068598762155c63a25bd06695603d5da4",
+        "whisper-MIT.txt": "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d"
+      },
+      "backend": "metal"
+    },
+    "macos-arm64": {
+      "url": "https://github.com/JustNeoNixy/SpeechLib/releases/download/runtime-gpu-1.0.0/speechlib-gpu-macos-arm64.zip",
+      "bytes": 3723266,
+      "sha256": "9080c479810bb0f7014d3f20ecbf55eca68d6f01770d273bbbb2ddacbbeff942",
+      "files": {
+        "libspeechlib-ggml-base.1.dylib": "f631c51b1340b9cb5068beed11f53e8730802d1f0067171be67f4949c5747bf1",
+        "libspeechlib-ggml-base.dylib": "c391114bf190e6eef1d2a337bf4ef63e882219331bded03dc8d4834e3999babe",
+        "libspeechlib-ggml-cpu.1.dylib": "c77b1420214679a0ec6817a797d62efddb32c1337cf083eceb77e120847ccc0f",
+        "libspeechlib-ggml-cpu.dylib": "0937e5a9531007e54532fbca1a46a8da7f532bd8904f440b614fab267790074e",
+        "libspeechlib-ggml-metal.1.dylib": "cadd6ace330e86f0d10ee6bffa586665034077ee13773bcd90a95f6180be81cd",
+        "libspeechlib-ggml-metal.dylib": "d2aacbb8f4b04b2a91fecaa8367a8ef2a9435b8ed8de33d58096b35a56b55b7d",
+        "libspeechlib-ggml.1.dylib": "8f4c5b82993536d2be61da5204806609f6126834072209df4eb2b7742a0b230d",
+        "libspeechlib-ggml.dylib": "056344566697f52b6bd3bf294729ef3b5aab03617b08d980dda427d8656d88b0",
+        "libspeechlib-whisper.1.dylib": "b8e060ca6e71b1b60862ae41257162eb24499dfa49adaa4af33971399bf9f8ae",
+        "libspeechlib-whisper.dylib": "100d028ea797dc46cb583166fed7a3f2ef18ce5b7344d8ed7b9143775d7b529f",
+        "source.json": "87631f8d658eb07f89704353f8489c98c7c0cad4873148380be3e7cd6f0cdb2e",
+        "speechlib-gpu.dylib": "3b938467cd9397eefce5420a7b5dfc0c01eaf58e3ce6002a2e328992c6cab870",
+        "whisper-MIT.txt": "94f29bbed6a22c35b992c5c6ebf0e7c92f13b836b90f36f461c9cf2f0f1d010d"
+      },
+      "backend": "metal"
     }
   },
   "models": {

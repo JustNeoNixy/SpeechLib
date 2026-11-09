@@ -8,6 +8,8 @@ parser.add_argument('--onnx', type=Path, required=True)
 parser.add_argument('--output', type=Path, default=Path('build/speech-runtimes'))
 parser.add_argument('--index', type=Path, default=Path('src/main/resources/speechlib/runtime-index.json'))
 parser.add_argument('--platform')
+parser.add_argument('--release',default='runtime-cpu-1.0.1')
+parser.add_argument('--source',required=True)
 args = parser.parse_args()
 platforms = {'windows-x64':'win-x64', 'linux-x64':'linux-x64', 'linux-arm64':'linux-aarch64',
              'macos-x64':'osx-x64', 'macos-arm64':'osx-aarch64'}
@@ -43,7 +45,8 @@ with zipfile.ZipFile(args.onnx) as original:
         with zipfile.ZipFile(target, 'w', compression=zipfile.ZIP_DEFLATED, compresslevel=9) as archive:
             for name, contents in sorted(data.items()): put(archive, name, contents)
         archive_bytes = target.read_bytes()
-        index[platform] = {'url':f'https://github.com/JustNeoNixy/SpeechLib/releases/download/runtime-cpu-1.0.0/{target.name}',
+        index[platform] = {'url':f'https://github.com/JustNeoNixy/SpeechLib/releases/download/{args.release}/{target.name}',
+                          'bridgeRevision':args.source,
                           'bytes':len(archive_bytes), 'sha256':digest(archive_bytes),
                           'files':{name:digest(contents) for name,contents in sorted(data.items())}}
         print(platform, len(archive_bytes), 'bytes')

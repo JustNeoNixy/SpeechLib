@@ -9,7 +9,7 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.*;
 import java.util.function.Consumer;
 
-/** Ordinary Vulkan libraries/models downloaded into the game's speech cache, never Fabric mods. */
+/** Ordinary GPU libraries and models downloaded into the shared speech cache. */
 public final class GpuRuntime {
     private GpuRuntime() {}
     public static boolean supportedPlatform() {
